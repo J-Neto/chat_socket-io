@@ -11,10 +11,19 @@ const room = urlSearch.get("select_room");
 // emit => emitir alguma informação
 // on => escutando alguma informação
 
+const usernameDiv = document.getElementById("username");
+usernameDiv.innerHTML = `Olá, ${username} - Você está na sala ${room}`;
+
 // Nome do evento e os dados que serão enviados pelo socket
 socket.emit("select_room", {
     username,
     room
+}, 
+// Recebendo o retorno da função (mensagens da sala)
+messages => {
+
+    // Chamando a função de colocar as mensagens recebidas na tela do chat da sala
+    messages.forEach((message) => createMessage(message));
 })
 
 // Pegando a mensagem
@@ -33,17 +42,36 @@ document.getElementById("message_input").addEventListener("keypress", (event) =>
             username
         }
 
+        // Enviando a mensagem pelo evento "message" com os dados "data"
         socket.emit("message", data);
 
         // Limpa o campo de mensagem
         event.target.value = "";
     }
+});
+
+// Ouvindo o evento "message" e recebendo os dados de "data"
+socket.on("message", data => {
+    createMessage(data)
 })
 
-console.log(username, room);
+function createMessage(data) {
+    const messageDiv = document.getElementById("messages");
 
+    // Criando uma nova div da mensagem
+    messageDiv.innerHTML += `  
+    <div class="messages" id="messages">
+        <div class="new_message">
+            <label class="form-label">
+                <strong> ${data.username} </strong> <span> ${data.text} - ${dayjs(data.createdAt).format("DD/MM HH:mm")} </span>
+            </label>
+        </div>
+    </div>`;
+}
 
-
+document.getElementById("logout").addEventListener("click", (event) => {
+    window.location.href= "index.html";
+})
 
 
 

@@ -22,13 +22,16 @@ const messages: Message[] = [];
 io.on("connection", socket => {
 
     // Permitindo o socket receber as informações do evento "select_room"
-    socket.on("select_room", (data) => {
+    // Com o callback, iremos retornar as mensagens da sala para o usuário 
+    socket.on("select_room", (data, callback) => {
         
         // Conectando o usuário à sala
         socket.join(data.room);
 
         // Verificando se o usuário já está conectado a sala (para situações de reload)
         const userInRoom = users.find(user => (user.username === data.username) && (user.room === data.room));
+
+        // Verificando se já existe um username igual
 
         // Se ele estiver ...
         if (userInRoom) {
@@ -44,6 +47,9 @@ io.on("connection", socket => {
                 socket_id: socket.id
             });
         }
+
+        const messagesRoom = getMessagesRoom(data.room);
+        callback(messagesRoom);
     });
 
     // Socket para ouvir o evento "message" e receber os dados "data"
@@ -56,10 +62,20 @@ io.on("connection", socket => {
             createdAt: new Date()
         }
 
-        // Armazenando a mensagem que o usuário cruou
+        // Armazenando a mensagem em um array que o usuário criou
         messages.push(message);
 
-        // Enviar para os usuários da sala
         // Como desejamos enviar a mensagem para todo o servidor, utilizamos o "IO"
-    })
+        // Enviar (io.to()) mensagem (evento "message" com os dados de "message")
+        // Para os usuários da sala (data.room)
+        io.to(data.room).emit("message", message);
+    });
 });
+
+// Função para retornar as mensagens da sala
+function getMessagesRoom(room: string) {
+
+    // Filtrando todas as mensagens com base na sala para recuperar somente as mensagens da sala específica
+    const messagesRoom = messages.filter(message => message.room === room);
+    return messagesRoom;
+}
